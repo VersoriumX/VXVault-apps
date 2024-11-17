@@ -231,7 +231,8 @@ $(document).ready(function(){
 
   $(document).on("click", ".wallet-button", function(){
     $(".wallet-guide-detail").hide();
-    $($(this).attr('data-target')).fadeIn();
+    var target = $(this).attr('data-target');
+    $.find(target).fadeIn();
   });
   $(document).on('click', '.select-lang', function(){
     enablei18n($(this).attr('data-lang'));
