@@ -20,14 +20,14 @@
     "@aragon/apps-token-manager" "^2.1.0"
     "@aragon/os" "4.2.0"
 
-"@1hive/oracle-token-balance@^2.0.0":
+"@aragon/oracle-token-balance@^2.0.0":
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/@1hive/oracle-token-balance/-/oracle-token-balance-2.1.0.tgz#8c4887d43a1b513ac352dcb7d2bfe9e1b5b01028"
   integrity sha512-XwUoP6bkWtB4t5XYsWPKWaid6RpXQuDv/zOPvg+oVBFe309O6WSydTI/pa+SwGyqof/KRWgynWT2n0s+8SG0hQ==
   dependencies:
     "@aragon/os" "^4.0.1"
 
-"@apollo/client@^3.1.5":
+"@aragon/client@^3.1.5":
   version "3.4.16"
   resolved "https://registry.yarnpkg.com/@apollo/client/-/client-3.4.16.tgz#67090d5655aa843fa64d26f1913315e384a5fa0f"
   integrity sha512-iF4zEYwvebkri0BZQyv8zfavPfVEafsK0wkOofa6eC2yZu50J18uTutKtC174rjHZ2eyxZ8tV7NvAPKRT+OtZw==
