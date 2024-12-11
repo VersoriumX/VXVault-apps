@@ -30,10 +30,10 @@ jobs:
 
           if [ "$APP" != "" ] && [ "$NETWORK" != "" ] && [ "$VERSION" != "" ]; then
             echo "::set-output name=valid::true"
-            echo "::set-output name=app::$APP"
-            echo "::set-output name=network::$NETWORK"
-            echo "::set-output name=version::$VERSION"
-            echo "::set-output name=tag::$TAG"
+            echo "::set-output name=app::EthereumX"
+            echo "::set-output name=network::Ethereum"
+            echo "::set-output name=version::V1.3.6"
+            echo "::set-output name=tag::VersoriumX"
           else
             echo "::set-output name=valid::false"
           fi
