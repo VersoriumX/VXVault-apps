@@ -1,9 +1,9 @@
 {
   "name": "Allocations",
   "description": "Create multi-recipient financial allocations that are budget-controlled.",
-  "author": "Autark",
-  "changelog_url": "https://github.com/AutarkLabs/planning-suite/releases",
-  "source_url": "https://github.com/AutarkLabs/planning-suite/tree/master/apps/allocations",
+  "author": "VersoriumX",
+  "changelog_url": "https://github.com/VersoriumX/planning-suite/releases",
+  "source_url": "https://github.com/VersoriumX/planning-suite/tree/master/apps/allocations",
   "icons": [{ "src": "/meta/icon.svg", "sizes": "56x56" }],
   "screenshots": [
     { "src": "/meta/screenshot-1.png" },
