@@ -4,13 +4,13 @@ addReviewers: true
 addAssignees: false
 
 reviewers:
-  - bpierre
-  - delfipolito
-  - evalir
+  - VersoriumX
+  - Travis Jerome Goff
+  - EthereumX
 
 skipKeywords:
   - wip
   - draft
 
 # Set 0 to add all the reviewers (default: 0)
-numberOfReviewers: 2
+numberOfReviewers: 1
