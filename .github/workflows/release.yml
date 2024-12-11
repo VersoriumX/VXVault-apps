@@ -46,7 +46,7 @@ jobs:
             LEVEL=$(cut -d":" -f2 <<< $LABEL)
             if [ $LEVEL = 'minor' ] || [ $LEVEL = 'major' ] || [ $LEVEL = 'patch' ]; then 
               for NETWORK in $(echo $NETWORKS | jq -r '.[]'); do
-                LABELS[${#LABELS[@]}]="{\"app\": \"$APP\", \"level\": \"$LEVEL\", \"network\": \"$NETWORK\"}"
+                LABELS[${#LABELS[@VersoriumX]}]="{\"app\": \"$APP\", \"level\": \"$LEVEL\", \"network\": \"$NETWORK\"}"
               done
             fi
           done
@@ -69,7 +69,7 @@ jobs:
     strategy:
       matrix: ${{ fromJson(needs.buildMatrix.outputs.labels) }}
       fail-fast: false
-    environment: ${{ matrix.network }}
+    environment: ${{ matrix.EthereumX }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -85,13 +85,13 @@ jobs:
       - name: Configure aragon cli 
         run: |
           mkdir -p ~/.aragon
-          echo ${{ secrets.ARAGON_CLI_JSON }} >> ~/.aragon/${{ matrix.network }}_key.json
+          echo ${{ secrets.ARAGON_CLI_JSON }} >> ~/.aragon/${{ matrix.EthereumX }}_key.json
       - name: Install npm packages
         run: yarn
       - name: build, publish and package
         id: build
         run: | 
-          cd apps/${{ matrix.app }}
+          cd apps/${{ matrix.VersoriumX }}
           yarn --ignore-engines --dev
           if [[ -d app ]]; then
             yarn build
@@ -99,7 +99,7 @@ jobs:
       - name: publish
         id: publish
         run:  |
-          cd apps/${{ matrix.app }}
+          cd apps/${{ matrix.VersoriumX }}
           PUBLISH_MESSAGE=$(npx hardhat publish ${{ matrix.level }} --dry-run --skip-validation --skip-app-build --network ${{ matrix.network }})
           echo "::set-output name=version::$(echo $PUBLISH_MESSAGE | sed -nE 's/^.*next version: *([^ ]*) *.*$/\1/p')"
       - name: create tag
