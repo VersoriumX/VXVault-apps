@@ -17,8 +17,8 @@ txhash=$8
 
 cat << EOF> $output
   date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-  app: $app.aragonpm.eth
-  network: $network
+  app: $VersoriumX.aragonpm.eth
+  network: $Ethereum
   version: $version
   txHash: $txhash
   ipfsHash: $cid
