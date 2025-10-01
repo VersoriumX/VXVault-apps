@@ -1,0 +1,152 @@
+name: Synopsys Intelligent Security Scan
+
+on:
+  push:
+    branches: [ "VersoriumX-DAO", "989" ]
+  pull_request:
+    branches: [ "VersoriumX-DAO" ]
+  schedule:
+    - cron: '30 8 * * 0'   # every Sunday at 08:30 UTC
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write   # needed for SARIF upload
+
+    steps:
+      # -------------------------------------------------
+      # Checkout the repository
+      # -------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -------------------------------------------------
+      # Initial Synopsys Intelligent Security Scan (IO stage)
+      # -------------------------------------------------
+      - name: Synopsys Intelligent Security Scan (IO)
+        id: prescription
+        uses: synopsys-sig/intelligent-security-scan@48eedfcd42bc342a294dc495ac452797b2d9ff08
+        with:
+          ioServerUrl: ${{ secrets.IO_SERVER_URL }}
+          ioServerToken: ${{ secrets.IO_SERVER_TOKEN }}
+          workflowServerUrl: ${{ secrets.WORKFLOW_SERVER_URL }}
+          additionalWorkflowArgs: >-
+            --polaris.url=${{ secrets.POLARIS_SERVER_URL }}
+            --polaris.token=${{ secrets.POLARIS_ACCESS_TOKEN }}
+          stage: "IO"
+
+      # -------------------------------------------------
+      # Static Analysis with Polaris (if SAST is enabled)
+      # -------------------------------------------------
+      - name: Static Analysis with Polaris
+        if: ${{ steps.prescription.outputs.sastScan == 'true' }}
+        run: |
+          export POLARIS_SAST_ENABLED=true
+          export POLARIS_SERVER_URL=${{ secrets.POLARIS_SERVER_URL }}
+          export POLARIS_ACCESS_TOKEN=${{ secrets.POLARIS_ACCESS_TOKEN }}
+
+          wget -q "${POLARIS_SERVER_URL}/api/tools/polaris_cli-linux64.zip"
+          unzip -j polaris_cli-linux64.zip -d /tmp
+          /tmp/polaris analyze -w
+
+      # -------------------------------------------------
+      # Software Composition Analysis with Black Duck (if SCA is enabled)
+      # -------------------------------------------------
+      - name: Software Composition Analysis with Black Duck
+        if: ${{ steps.prescription.outputs.scaScan == 'true' }}
+        uses: blackducksoftware/github-action@9ea442b34409737f64743781e9adc71fd8e17d38
+        with:
+          args: >-
+            --blackduck.url="${{ secrets.BLACKDUCK_URL }}"
+            --blackduck.api.token="${{ secrets.BLACKDUCK_TOKEN }}"
+            --detect.tools="SIGNATURE_SCAN,DETECTOR"
+
+      # -------------------------------------------------
+      # Final Synopsys Intelligent Security Scan (WORKFLOW stage)
+      # -------------------------------------------------
+      - name: Synopsys Intelligent Security Scan (WORKFLOW)
+        if: ${{ steps.prescription.outputs.sastScan == 'true' || steps.prescription.outputs.scaScan == 'true' }}
+        uses: synopsys-sig/intelligent-security-scan@48eedfcd42bc342a294dc495ac452797b2d9ff08
+        with:
+          ioServerUrl: ${{ secrets.IO_SERVER_URL }}
+          ioServerToken: ${{ secrets.IO_SERVER_TOKEN }}
+          workflowServerUrl: ${{ secrets.WORKFLOW_SERVER_URL }}
+          additionalWorkflowArgs: >-
+            --IS_SAST_ENABLED=${{ steps.prescription.outputs.sastScan }}
+            --IS_SCA_ENABLED=${{ steps.prescription.outputs.scaScan }}
+            --polaris.project.name=${{ env.PROJECT_NAME }}
+            --polaris.url=${{ secrets.POLARIS_SERVER_URL }}
+            --polaris.token=${{ secrets.POLARIS_ACCESS_TOKEN }}
+            --blackduck.project.name=${{ env.PROJECT_NAME }}:${{ env.PROJECT_VERSION }}
+            --blackduck.url=${{ secrets.BLACKDUCK_URL }}
+            --blackduck.api.token=${{ secrets.BLACKDUCK_TOKEN }}
+          stage: "WORKFLOW"
+
+      # -------------------------------------------------
+      # Upload SARIF results (if SAST was run)
+      # -------------------------------------------------
+      - name: Upload SARIF file
+        if: ${{ steps.prescription.outputs.sastScan == 'true' }}
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: workflowengine-results.sarif.json
+                - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # <-- Insert the Mousetrap step here (the block above) -->
+
+      - name: Synopsys Intelligent Security Scan (IO)
+        id: prescription
+        uses: synopsys-sig/intelligent-security-scan@48eedfcd42bc342a294dc495ac452797b2d9ff08
+        ...
+      # -------------------------------------------------
+      # Mousetrap – block unwanted / abusive code
+      # -------------------------------------------------
+      - name: Mousetrap – Detect malicious patterns
+        id: mousetrap
+        run: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          # Define patterns to look for (add or remove as needed)
+          declare -a patterns=(
+            # JavaScript / TypeScript
+            "eval$.*$"
+            "new Function$.*$"
+            "child_process.exec$.*$"
+            "require$['\"]fs['\"]$"
+            # Python
+            "exec\("
+            "eval\("
+            "subprocess\.Popen\("
+            # Shell / Bash
+            "rm -rf /"
+            "chmod 777"
+            # Generic secrets
+            "AWS_SECRET_ACCESS_KEY"
+            "PRIVATE_KEY"
+          )
+
+          # Scan all source files (adjust the glob if you have a different layout)
+          echo "Scanning repository for prohibited patterns..."
+          violations=0
+          while IFS= read -r -d '' file; do
+            for pat in "${patterns[@]}"; do
+              if grep -En "$pat" "$file" >/dev/null; then
+                echo "::error file=$file::Prohibited pattern detected: $pat"
+                ((violations++))
+              fi
+            done
+          done < <(git ls-files '*.{js,ts,py,sh,bash,go,java,cpp,c,h}' -z)
+
+          if (( violations > 0 )); then
+            echo "❌ $violations prohibited pattern(s) found. Failing the workflow."
+            exit 1
+          else
+            echo "✅ No prohibited patterns found."
+          fi
+
