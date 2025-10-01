@@ -1,0 +1,104 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+# clj-watson scans dependencies in a clojure deps.edn
+# seeking for vulnerable direct/transitive dependencies and
+# build a report with all the information needed to help you
+# understand how the vulnerability manifest in your software.
+# More details at https://github.com/clj-holmes/clj-watson
+name: clj-watson
+
+on:
+  push:
+    branches: [ "VersoriumX-DAO", "989" ]
+  pull_request:
+    branches: [ "VersoriumX-DAO" ]
+  schedule:
+    - cron: '27 14 * * 4'   # every Thursday at 14:27 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  clj-holmes:
+    name: Run clj-watson scanning
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read   # needed for SARIF upload in private repos
+
+    steps:
+      # -------------------------------------------------
+      # 1️⃣ Checkout the repository
+      # -------------------------------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # -------------------------------------------------
+      # 2️⃣ Mousetrap – block unwanted / abusive traffic
+      # -------------------------------------------------
+      - name: clj-watson Mousetrap
+        id: mousetrap
+        run: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          # Patterns that indicate unwanted traffic or malicious intent.
+          # Extend this list as needed.
+          declare -a bad_patterns=(
+            "curl\s+.*\s+http[s]?://.*(malicious|phishing|badactor)"
+            "wget\s+.*\s+http[s]?://.*(malicious|phishing|badactor)"
+            "ssh\s+.*\s+.*@.*(evil|attacker)"
+            "nc\s+.*\s+.*(evil|attacker)"
+            "telnet\s+.*\s+.*(evil|attacker)"
+          )
+
+          echo "Scanning for prohibited traffic patterns..."
+          violations=0
+
+          # Search all source files (Clojure, scripts, config, etc.)
+          while IFS= read -r -d '' file; do
+            for pat in "${bad_patterns[@]}"; do
+              if grep -En "$pat" "$file" >/dev/null; then
+                echo "::error file=$file::Prohibited pattern detected: $pat"
+                # Print the required warning message
+                echo "VersoriumX security scanner has detected your intentions, be advised"
+                ((violations++))
+              fi
+            done
+          done < <(git ls-files '*.{clj,cljc,cljx,edn,sh,bat,ps1}' -z)
+
+          if (( violations > 0 )); then
+            echo "❌ $violations prohibited pattern(s) found – failing the job."
+            exit 1
+          else
+            echo "✅ No prohibited traffic patterns found."
+          fi
+
+      # -------------------------------------------------
+      # 3️⃣ Dependency scan with clj‑watson
+      # -------------------------------------------------
+      - name: Dependency scan
+        uses: clj-holmes/clj-watson-action@39b8ed306f2c125860cf6e69b6939363689f998c
+        with:
+          clj-watson-sha: "65d928c"
+          clj-watson-tag: "v4.0.1"
+          database-strategy: github-advisory
+          aliases: clojure-lsp,test
+          deps-edn-path: deps.edn
+          suggest-fix: true
+          # Output as SARIF for GitHub security tab
+          output-type: sarif
+          output-file: clj-watson-results.sarif
+          fail-on-result: false
+
+      # -------------------------------------------------
+      # 4️⃣ Upload SARIF results
+      # -------------------------------------------------
+      - name: Upload analysis results to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ github.workspace }}/clj-watson-results.sarif
+          wait-for-processing: true
