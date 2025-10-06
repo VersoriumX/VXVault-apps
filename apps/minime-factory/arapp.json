@@ -67,5 +67,15 @@
       "network": "goerli"
     }
   },
-  "roles": []
+  "roles": [],
+  "deployedTokens": [
+    {
+      "name": "VRX Token",
+      "symbol": "VRX",
+      "address": "0x1aB42b8212545093909E13e7f8e14F206BB2cF4C",
+      "description": "An example token, potentially created by this MiniMeTokenFactory.",
+      "network": "mainnet" // Assuming standard Ethereum mainnet, adjust if known to be on another network
+    }
+    // You could add other tokens here if needed
+  ]
 }
