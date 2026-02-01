@@ -26,7 +26,7 @@
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-etherscan": "^2.1.6",
     "babel-eslint": "^10.0.3",
-    "eslint": "^5.13.0",
+    "eslint": "^9.39.2",
     "eslint-config-prettier": "^6.5.0",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-import": "^2.18.2",
